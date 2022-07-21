@@ -100,9 +100,11 @@ else
 
                 set action
                 if test -z "$__cnf_action"
-                    __cnf_print "\"$cmd\" may be found in package \"$packages\"\n"
+                    set may_be_found "\"$cmd\" may be found in package \"$packages\""
+                    __cnf_print "$may_be_found\n"
                     __cnf_print "What would you like to do? "
-                    set action (echo "$__cnf_actions_joined" | tr ":" "\n" | fzf --prompt "Action (\"esc\" to abort):")
+                    set action (echo "$__cnf_actions_joined" | tr ":" "\n" | \
+                        fzf --prompt "Action (\"esc\" to abort):" --header "$may_be_found")
                 else
                     set action "$__cnf_action"
                 end
