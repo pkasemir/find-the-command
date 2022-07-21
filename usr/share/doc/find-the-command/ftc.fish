@@ -88,9 +88,10 @@ else
                 __cnf_cmd_not_found "$cmd"
             case 1
                 function __prompt_install --argument-names packages
-                    read --prompt="echo \"Would you like to install this package? (y|n) \"" result
+                    read --prompt="echo \"Would you like to install '$packages'? [Y/n] \"" result
+                    or return $status
                     switch "$result"
-                    case 'y*' 'Y*'
+                    case 'y*' 'Y*' ''
                         "$__cnf_asroot" pacman -S "$packages"
                     case '*'
                         return 127
