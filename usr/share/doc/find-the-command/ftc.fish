@@ -3,7 +3,7 @@ function __cnf_print --argument-names message
 end
 
 set __cnf_action
-set __cnf_force_su
+set __cnf_force_su 0
 set __cnf_noprompt 0
 set __cnf_verbose 1
 
@@ -11,13 +11,12 @@ set __cnf_actions_joined "install:info:list files:list files (paged)"
 set __cnf_actions (string split : "$__cnf_actions_joined")
 
 for opt in $argv
-    echo "$opt"
     if test (string length "$opt") -gt 0
         switch "$opt"
             case noprompt
                 set __cnf_noprompt 1
             case su
-                set __cnf_force_su
+                set __cnf_force_su 1
             case quiet
                 set __cnf_verbose 0
             case install
@@ -71,12 +70,12 @@ if test "$__cnf_noprompt" -eq 1
         end
     end
 else
-    set __cnf_asroot
+    function __cnf_asroot; $argv; end
     if test (id -u) -ne 0
-        if set --query "$__cnf_force_su"
-            set __cnf_asroot "su -c"
+        if test "$__cnf_force_su" -eq 1
+            function __cnf_asroot; su -c "$argv"; end
         else
-            set __cnf_asroot "sudo"
+            function __cnf_asroot; sudo $argv; end
         end
     end
     function fish_command_not_found
@@ -92,7 +91,7 @@ else
                     or return $status
                     switch "$result"
                     case 'y*' 'Y*' ''
-                        "$__cnf_asroot" pacman -S "$packages"
+                        __cnf_asroot pacman -S "$packages"
                     case '*'
                         return 127
                     end
@@ -111,7 +110,7 @@ else
 
                 switch "$action"
                     case 'install'
-                        "$__cnf_asroot" pacman -S "$packages"
+                        __cnf_asroot pacman -S "$packages"
                     case 'info'
                         pacman -Si "$packages"
                         __prompt_install "$packages"
@@ -128,7 +127,7 @@ else
             case '*'
                 __cnf_print "\"$cmd\" may be found in the following packages:\n"
                 set --local package (echo "$packages" | tr " " "\n" | fzf --prompt "Select a package to install (\"esc\" to abort):")
-                test -n "$package"; and "$__cnf_asroot" pacman -S "$package"; or return 127
+                test -n "$package"; and __cnf_asroot pacman -S "$package"; or return 127
         end
     end
 end
