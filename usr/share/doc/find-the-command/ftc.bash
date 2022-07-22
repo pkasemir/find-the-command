@@ -1,6 +1,10 @@
 # Print to stderr
 alias _cnf_print='echo -e 1>&2'
 
+cnf_force_su=0
+cnf_noprompt=0
+cnf_verbose=1
+
 pacman_files_command(){
     local CMD=$1
     local VERSION=$(pacman -Q pacman | awk -F[\ -] '{print $2}')
@@ -31,7 +35,7 @@ then
         _cnf_print "find-the-command: \"$CMD\" is not found locally, searching in repositories..." 
     }
 else
-    _pre_search_warn(){ : Do nothing; }
+    _cnf_pre_search_warn(){ : Do nothing; }
 fi
 
 # Without installation prompt

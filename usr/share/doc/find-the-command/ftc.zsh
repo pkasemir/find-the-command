@@ -1,6 +1,11 @@
 # Print to stderr
 alias _cnf_print='echo -e 1>&2'
 
+cnf_action=
+cnf_force_su=0
+cnf_noprompt=0
+cnf_verbose=1
+
 _cnf_actions=('install' 'info' 'list files' 'list files (paged)')
 
 pacman_files_command(){
