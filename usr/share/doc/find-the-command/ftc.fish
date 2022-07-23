@@ -7,8 +7,7 @@ set __cnf_force_su 0
 set __cnf_noprompt 0
 set __cnf_verbose 1
 
-set __cnf_actions_joined "install:info:list files:list files (paged)"
-set __cnf_actions (string split : "$__cnf_actions_joined")
+set __cnf_actions "install" "info" "list files" "list files (paged)"
 
 for opt in $argv
     if test (string length "$opt") -gt 0
@@ -102,7 +101,7 @@ else
                     set may_be_found "\"$cmd\" may be found in package \"$packages\""
                     __cnf_print "$may_be_found\n"
                     __cnf_print "What would you like to do? "
-                    set action (echo "$__cnf_actions_joined" | tr ":" "\n" | \
+                    set action (printf "%s\n" $__cnf_actions | \
                         fzf --prompt "Action (\"esc\" to abort):" --header "$may_be_found")
                 else
                     set action "$__cnf_action"
@@ -126,7 +125,7 @@ else
                 end
             case '*'
                 __cnf_print "\"$cmd\" may be found in the following packages:\n"
-                set --local package (echo "$packages" | tr " " "\n" | fzf --prompt "Select a package to install (\"esc\" to abort):")
+                set --local package (printf "%s\n" $packages | fzf --prompt "Select a package to install (\"esc\" to abort):")
                 test -n "$package"; and __cnf_asroot pacman -S "$package"; or return 127
         end
     end
