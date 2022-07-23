@@ -24,9 +24,10 @@ You can also append some options when sourcing file to customize your experience
 
 | Option              | Description                                                                     | Bash | Zsh | Fish |
 | ------------------- | ------------------------------------------------------------------------------- |:----:|:---:|:----:|
+| `askfirst`          | Ask before performing the search.                                               | ✗    | ✗   | ✓    |
 | `noprompt`          | Disable installation prompt.                                                    | ✓    | ✓   | ✓    |
-| `quiet`             | Decrese verbosity.                                                              | ✓    | ✓   | ✓    |
-| `su`                | Always use `su` instead of `sudo`.                                              | ✓    | ✓   | ✓    |
+| `quiet`             | Decrease verbosity.                                                             | ✓    | ✓   | ✓    |
+| `su`                | Always use `su -c` instead of `sudo`.                                           | ✓    | ✓   | ✓    |
 | `install`           | Automatically install the package without prompting for action.                 | ✗    | ✓   | ✓    |
 | `info`              | Automatically print package info without prompting for action.                  | ✗    | ✓   | ✓    |
 | `list_files`        | Automatically print a list of package files without prompting for action.       | ✗    | ✓   | ✓    |

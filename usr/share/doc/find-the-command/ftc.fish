@@ -3,6 +3,7 @@ function __cnf_print --argument-names message
 end
 
 set __cnf_action
+set __cnf_askfirst false
 set __cnf_force_su false
 set __cnf_noprompt false
 set __cnf_verbose true
@@ -12,6 +13,8 @@ set __cnf_actions "install" "info" "list files" "list files (paged)"
 for opt in $argv
     if test (string length "$opt") -gt 0
         switch "$opt"
+            case askfirst
+                set __cnf_askfirst true
             case noprompt
                 set __cnf_noprompt true
             case su
@@ -32,9 +35,28 @@ for opt in $argv
     end
 end
 
-if $__cnf_verbose
+# Delete __cnf_pre_search_warn so we can check if we've created the function
+functions -e __cnf_pre_search_warn
+
+if $__cnf_askfirst
     function __cnf_pre_search_warn --argument-names cmd
-        __cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories...\n"
+        read --prompt="echo \"find-the-command: \"$cmd\" is not found locally, search in repositories? [Y/n] \"" result
+        or return $status
+        switch "$result"
+        case 'y*' 'Y*' ''
+            return 0
+        case '*'
+            return 127
+        end
+    end
+end
+
+if $__cnf_verbose
+    if test "$(type -t __cnf_pre_search_warn 2>/dev/null)" != function
+        function __cnf_pre_search_warn --argument-names cmd
+            __cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories...\n"
+            return 0
+        end
     end
 
     function __cnf_cmd_not_found --argument-names cmd
@@ -42,7 +64,10 @@ if $__cnf_verbose
         return 127
     end
 else
-    function __cnf_pre_search_warn
+    if test "$(type -t __cnf_pre_search_warn 2>/dev/null)" != function
+        function __cnf_pre_search_warn
+            return 0
+        end
     end
 
     function __cnf_cmd_not_found
@@ -54,6 +79,7 @@ if $__cnf_noprompt
     function fish_command_not_found
         set cmd "$argv[1]"
         __cnf_pre_search_warn "$cmd"
+        or return $status
 
         set packages (pkgfile --binaries -- "$cmd" ^/dev/null)
         switch (echo "$packages" | wc -w)
@@ -80,6 +106,7 @@ else
     function fish_command_not_found
         set cmd "$argv[1]"
         __cnf_pre_search_warn "$cmd"
+        or return $status
         set packages (pkgfile --binaries -- "$cmd" ^/dev/null)
         switch (echo "$packages" | wc -w)
             case 0
