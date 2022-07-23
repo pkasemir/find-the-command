@@ -127,7 +127,7 @@ else
                 end
             case '*'
                 __cnf_print "\"$cmd\" may be found in the following packages:\n"
-                set --local package (echo "$packages" | tr " " "\n" | fzf --prompt "Select a package to install (\"esc\" to abort):")
+                set --local package (echo "$packages" | tr " " "\n" | fzf --prompt "Select a package to install (\"esc\" to abort):" --preview='pacman -Si {}; pacman -Flq {}')
                 test -n "$package"; and "$__cnf_asroot" pacman -S "$package"; or return 127
         end
     end
