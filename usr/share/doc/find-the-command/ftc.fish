@@ -3,9 +3,9 @@ function __cnf_print --argument-names message
 end
 
 set __cnf_action
-set __cnf_force_su 0
-set __cnf_noprompt 0
-set __cnf_verbose 1
+set __cnf_force_su false
+set __cnf_noprompt false
+set __cnf_verbose true
 
 set __cnf_actions "install" "info" "list files" "list files (paged)"
 
@@ -13,11 +13,11 @@ for opt in $argv
     if test (string length "$opt") -gt 0
         switch "$opt"
             case noprompt
-                set __cnf_noprompt 1
+                set __cnf_noprompt true
             case su
-                set __cnf_force_su 1
+                set __cnf_force_su true
             case quiet
-                set __cnf_verbose 0
+                set __cnf_verbose false
             case install
                 set __cnf_action "$__cnf_actions[1]"
             case info
@@ -32,7 +32,7 @@ for opt in $argv
     end
 end
 
-if test "$__cnf_verbose" -ne 0
+if $__cnf_verbose
     function __cnf_pre_search_warn --argument-names cmd
         __cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories...\n"
     end
@@ -50,7 +50,7 @@ else
     end
 end
 
-if test "$__cnf_noprompt" -eq 1
+if $__cnf_noprompt
     function fish_command_not_found
         set cmd "$argv[1]"
         __cnf_pre_search_warn "$cmd"
@@ -71,7 +71,7 @@ if test "$__cnf_noprompt" -eq 1
 else
     function __cnf_asroot; $argv; end
     if test (id -u) -ne 0
-        if test "$__cnf_force_su" -eq 1
+        if $__cnf_force_su
             function __cnf_asroot; su -c "$argv"; end
         else
             function __cnf_asroot; sudo $argv; end
