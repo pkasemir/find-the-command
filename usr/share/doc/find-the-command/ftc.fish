@@ -35,6 +35,18 @@ for opt in $argv
     end
 end
 
+function __cnf_asroot
+    if test (id -u) -ne 0
+        if $__cnf_force_su
+            su -c "$argv"
+        else
+            sudo $argv
+        end
+    else
+        $argv
+    end
+end
+
 # Delete __cnf_pre_search_warn so we can check if we've created the function
 functions -e __cnf_pre_search_warn
 
@@ -95,14 +107,6 @@ if $__cnf_noprompt
         end
     end
 else
-    function __cnf_asroot; $argv; end
-    if test (id -u) -ne 0
-        if $__cnf_force_su
-            function __cnf_asroot; su -c "$argv"; end
-        else
-            function __cnf_asroot; sudo $argv; end
-        end
-    end
     function fish_command_not_found
         set cmd "$argv[1]"
         __cnf_pre_search_warn "$cmd"
