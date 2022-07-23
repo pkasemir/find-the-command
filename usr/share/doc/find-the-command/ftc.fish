@@ -62,8 +62,8 @@ if $__cnf_noprompt
             case 1
                 __cnf_print "\"$cmd\" may be found in package \"$packages\"\n"
             case '*'
-                __cnf_print "\"$cmd\" may be found in the following packages:\n"
-                for package in "$packages"
+                __cnf_print "\"$cmd\" may be found in the following packages:"
+                for package in $packages
                     __cnf_print "\t$package"
                 end
         end
