@@ -47,19 +47,60 @@ function __cnf_asroot
     end
 end
 
+function __cnf_prompt_yn --argument-name prompt
+    read --prompt="echo \"find-the-command: $prompt [Y/n] \"" result
+    or kill -s INT $fish_pid
+    switch "$result"
+    case 'y*' 'Y*' ''
+        return 0
+    case '*'
+        return 1
+    end
+end
+
+function __cnf_need_to_update_files --argument-name dir
+    if test (find "$dir" -type f -name "*.files" 2> /dev/null | wc -w) -eq 0
+        set old_files all
+    else
+        set newest_files (/usr/bin/ls -t $dir/*.files | head -n 1)
+        set newest_pacman_db (/usr/bin/ls -t /var/lib/pacman/sync/*.db | head -n 1)
+        set old_files (find $newest_pacman_db -newer $newest_files)
+    end
+    if test -n "$old_files"
+        __cnf_prompt_yn "$dir/*.files are out of date, update?"
+        return $status
+    end
+    return 1
+end
+
+if type -q pkgfile
+    function __cnf_command_packages --argument-names cmd
+        if __cnf_need_to_update_files /var/cache/pkgfile
+            __cnf_asroot pkgfile --update >&2
+        end
+        pkgfile --binaries -- "$cmd" 2> /dev/null
+    end
+else
+    function __cnf_command_packages --argument-names cmd
+        set pacman_version (pacman -Q pacman | awk -F'[ -]' '{print $2}')
+        set args "-Fq"
+        if test (vercmp "$pacman_version" "5.2.0") -lt 0
+            set args "$args"o
+        end
+        if __cnf_need_to_update_files /var/lib/pacman/sync
+            __cnf_asroot pacman -Fy >&2
+        end
+        pacman $args /usr/bin/$cmd 2> /dev/null
+    end
+end
+
 # Delete __cnf_pre_search_warn so we can check if we've created the function
 functions -e __cnf_pre_search_warn
 
 if $__cnf_askfirst
     function __cnf_pre_search_warn --argument-names cmd
-        read --prompt="echo \"find-the-command: \"$cmd\" is not found locally, search in repositories? [Y/n] \"" result
-        or return $status
-        switch "$result"
-        case 'y*' 'Y*' ''
-            return 0
-        case '*'
-            return 127
-        end
+        __cnf_prompt_yn "\"$cmd\" is not found locally, search in repositories?"
+        return $status
     end
 end
 
@@ -91,9 +132,9 @@ if $__cnf_noprompt
     function fish_command_not_found
         set cmd "$argv[1]"
         __cnf_pre_search_warn "$cmd"
-        or return $status
+        or return 127
 
-        set packages (pkgfile --binaries -- "$cmd" ^/dev/null)
+        set packages (__cnf_command_packages "$cmd")
         switch (echo "$packages" | wc -w)
             case 0
                 __cnf_cmd_not_found "$cmd"
@@ -110,19 +151,16 @@ else
     function fish_command_not_found
         set cmd "$argv[1]"
         __cnf_pre_search_warn "$cmd"
-        or return $status
-        set packages (pkgfile --binaries -- "$cmd" ^/dev/null)
+        or return 127
+        set packages (__cnf_command_packages "$cmd")
         switch (echo "$packages" | wc -w)
             case 0
                 __cnf_cmd_not_found "$cmd"
             case 1
                 function __prompt_install --argument-names packages
-                    read --prompt="echo \"Would you like to install '$packages'? [Y/n] \"" result
-                    or return $status
-                    switch "$result"
-                    case 'y*' 'Y*' ''
+                    if __cnf_prompt_yn "Would you like to install '$packages'?"
                         __cnf_asroot pacman -S "$packages"
-                    case '*'
+                    else
                         return 127
                     end
                 end
