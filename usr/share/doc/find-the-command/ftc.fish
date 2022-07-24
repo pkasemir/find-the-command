@@ -192,7 +192,7 @@ else
             case 0
                 __cnf_cmd_not_found "$cmd"
             case 1
-                function __prompt_install --argument-names packages
+                function __cnf_prompt_install --argument-names packages
                     if __cnf_prompt_yn "Would you like to install '$packages'?"
                         __cnf_asroot pacman -S "$packages"
                     else
@@ -216,14 +216,14 @@ else
                         __cnf_asroot pacman -S "$packages"
                     case 'info'
                         pacman -Si "$packages"
-                        __prompt_install "$packages"
+                        __cnf_prompt_install "$packages"
                     case 'list files'
                         pacman -Flq "$packages"
-                        __prompt_install "$packages"
+                        __cnf_prompt_install "$packages"
                     case 'list files (paged)'
                         test -z "$pager"; and set --local pager less
                         pacman -Flq "$packages" | "$pager"
-                        __prompt_install "$packages"
+                        __cnf_prompt_install "$packages"
                     case '*'
                         return 127
                 end
