@@ -1,5 +1,5 @@
-function __cnf_print --argument-names message
-    echo -e 1>&2 "$message"
+function __cnf_print
+    echo -e 1>&2 $argv
 end
 
 set __cnf_action
@@ -170,7 +170,7 @@ if $__cnf_noprompt
         or return 127
 
         set packages (__cnf_command_packages "$cmd")
-        switch (echo "$packages" | wc -w)
+        switch (count $packages)
             case 0
                 __cnf_cmd_not_found "$cmd"
             case 1
@@ -188,7 +188,7 @@ else
         __cnf_pre_search_warn "$cmd"
         or return 127
         set packages (__cnf_command_packages "$cmd")
-        switch (echo "$packages" | wc -w)
+        switch (count $packages)
             case 0
                 __cnf_cmd_not_found "$cmd"
             case 1
@@ -239,3 +239,6 @@ function __fish_command_not_found_handler \
     --on-event fish_command_not_found
     fish_command_not_found "$argv"
 end
+
+# Clean up environment
+set -e __cnf_askfirst __cnf_noprompt __cnf_noupdate __cnf_verbose
