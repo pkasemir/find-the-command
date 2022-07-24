@@ -125,22 +125,10 @@ else
     end
 end
 
-# Delete __cnf_pre_search_warn so we can check if we've created the function
-functions -e __cnf_pre_search_warn
-
-if $__cnf_askfirst
-    function __cnf_pre_search_warn --argument-names cmd
-        __cnf_prompt_yn "\"$cmd\" is not found locally, search in repositories?"
-        return $status
-    end
-end
-
 if $__cnf_verbose
-    if test "$(type -t __cnf_pre_search_warn 2>/dev/null)" != function
-        function __cnf_pre_search_warn --argument-names cmd
-            __cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories...\n"
-            return 0
-        end
+    function __cnf_pre_search_warn --argument-names cmd
+        __cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories...\n"
+        return 0
     end
 
     function __cnf_cmd_not_found --argument-names cmd
@@ -148,14 +136,20 @@ if $__cnf_verbose
         return 127
     end
 else
-    if test "$(type -t __cnf_pre_search_warn 2>/dev/null)" != function
-        function __cnf_pre_search_warn
-            return 0
-        end
+    function __cnf_pre_search_warn
+        return 0
     end
 
     function __cnf_cmd_not_found
         return 127
+    end
+end
+
+if $__cnf_askfirst
+    # When askfirst is given, override default verbose behavior
+    function __cnf_pre_search_warn --argument-names cmd
+        __cnf_prompt_yn "\"$cmd\" is not found locally, search in repositories?"
+        return $status
     end
 end
 
