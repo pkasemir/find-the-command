@@ -38,6 +38,22 @@ for opt in $argv
     end
 end
 
+function __cnf_pacman_db_path
+    set db_path (string trim (sed -n 's/^DBPath[[:space:]]*=//p' /etc/pacman.conf))
+    if test -z "$db_path[1]"
+        set db_path /var/lib/pacman
+    end
+    echo "$db_path[1]/sync"
+end
+
+function __cnf_pkgfile_cache
+    set cache (string trim --chars=' )' (pkgfile --help | sed -n 's/.*--cachedir.*default://p'))
+    if test -z "$cache"
+        set cache /var/cache/pkgfile
+    end
+    echo "$cache"
+end
+
 function __cnf_asroot
     if test (id -u) -ne 0
         if $__cnf_force_su
@@ -67,11 +83,19 @@ if $__cnf_noupdate
     end
 else
     function __cnf_need_to_update_files --argument-name dir
-        if test (find "$dir" -type f -name "*.files" 2> /dev/null | wc -w) -eq 0
+        set db_path (__cnf_pacman_db_path)
+        if test (find "$db_path" -type f -maxdepth 2 -name "*.db" 2> /dev/null | wc -w) -eq 0
+            if __cnf_prompt_yn "No pacman db files in '$db_path', refresh?"
+                __cnf_asroot pacman -Sy >&2
+            else
+                return 1
+            end
+        end
+        if test (find "$dir" -type f -maxdepth 2 -name "*.files" 2> /dev/null | wc -w) -eq 0
             set old_files all
         else
-            set newest_files (/usr/bin/ls -t $dir/*.files | head -n 1)
-            set newest_pacman_db (/usr/bin/ls -t /var/lib/pacman/sync/*.db | head -n 1)
+            set newest_files (/usr/bin/ls -t "$dir"/*.files | head -n 1)
+            set newest_pacman_db (/usr/bin/ls -t "$db_path"/*.db | head -n 1)
             set old_files (find $newest_pacman_db -newer $newest_files)
         end
         if test -n "$old_files"
@@ -84,7 +108,8 @@ end
 
 if type -q pkgfile
     function __cnf_command_packages --argument-names cmd
-        if __cnf_need_to_update_files /var/cache/pkgfile
+        set cache (__cnf_pkgfile_cache)
+        if __cnf_need_to_update_files "$cache"
             __cnf_asroot pkgfile --update >&2
         end
         pkgfile --binaries -- "$cmd" 2> /dev/null
@@ -96,7 +121,8 @@ else
         if test (vercmp "$pacman_version" "5.2.0") -lt 0
             set args "$args"o
         end
-        if __cnf_need_to_update_files /var/lib/pacman/sync
+        set db_path (__cnf_pacman_db_path)
+        if __cnf_need_to_update_files "$db_path/sync"
             __cnf_asroot pacman -Fy >&2
         end
         pacman $args /usr/bin/$cmd 2> /dev/null
