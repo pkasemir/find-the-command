@@ -6,6 +6,7 @@ set __cnf_action
 set __cnf_askfirst false
 set __cnf_force_su false
 set __cnf_noprompt false
+set __cnf_noupdate false
 set __cnf_verbose true
 
 set __cnf_actions "install" "info" "list files" "list files (paged)"
@@ -17,6 +18,8 @@ for opt in $argv
                 set __cnf_askfirst true
             case noprompt
                 set __cnf_noprompt true
+            case noupdate
+                set __cnf_noupdate true
             case su
                 set __cnf_force_su true
             case quiet
@@ -58,19 +61,25 @@ function __cnf_prompt_yn --argument-name prompt
     end
 end
 
-function __cnf_need_to_update_files --argument-name dir
-    if test (find "$dir" -type f -name "*.files" 2> /dev/null | wc -w) -eq 0
-        set old_files all
-    else
-        set newest_files (/usr/bin/ls -t $dir/*.files | head -n 1)
-        set newest_pacman_db (/usr/bin/ls -t /var/lib/pacman/sync/*.db | head -n 1)
-        set old_files (find $newest_pacman_db -newer $newest_files)
+if $__cnf_noupdate
+    function __cnf_need_to_update_files
+        return 1
     end
-    if test -n "$old_files"
-        __cnf_prompt_yn "$dir/*.files are out of date, update?"
-        return $status
+else
+    function __cnf_need_to_update_files --argument-name dir
+        if test (find "$dir" -type f -name "*.files" 2> /dev/null | wc -w) -eq 0
+            set old_files all
+        else
+            set newest_files (/usr/bin/ls -t $dir/*.files | head -n 1)
+            set newest_pacman_db (/usr/bin/ls -t /var/lib/pacman/sync/*.db | head -n 1)
+            set old_files (find $newest_pacman_db -newer $newest_files)
+        end
+        if test -n "$old_files"
+            __cnf_prompt_yn "$dir/*.files are out of date, update?"
+            return $status
+        end
+        return 1
     end
-    return 1
 end
 
 if type -q pkgfile
