@@ -46,14 +46,6 @@ function __cnf_pacman_db_path
     echo "$db_path[1]/sync"
 end
 
-function __cnf_pkgfile_cache
-    set cache (string trim --chars=' )' (pkgfile --help | sed -n 's/.*--cachedir.*default://p'))
-    if test -z "$cache"
-        set cache /var/cache/pkgfile
-    end
-    echo "$cache"
-end
-
 function __cnf_asroot
     if test (id -u) -ne 0
         if $__cnf_force_su
@@ -108,7 +100,11 @@ end
 
 if type -q pkgfile
     function __cnf_command_packages --argument-names cmd
-        set cache (__cnf_pkgfile_cache)
+        set cache (string trim --chars=' )' (pkgfile --help | sed -n 's/.*--cachedir.*default://p'))
+        if test -z "$cache"
+            set cache /var/cache/pkgfile
+        end
+
         if __cnf_need_to_update_files "$cache"
             __cnf_asroot pkgfile --update >&2
         end
