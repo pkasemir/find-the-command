@@ -1,6 +1,6 @@
 # Find the command
 
-Find-the-command is a bunch of simple command-not-found hooks, intended for using with pacman, it is primarily targeting Arch-based distros. It uses pacman functionality for searching files, introduced in 5.0 release, so there are no useless pkgfile dependencies.
+Find-the-command is a bunch of simple command-not-found hooks, intended for using with pacman, it is primarily targeting Arch-based distros. It can use pacman functionality for searching files, introduced in 5.0 release, but if pkgfile is installed, it will be used since it provides faster search results.
 
 ## How does it work?
 
@@ -36,15 +36,20 @@ You can also append some options when sourcing file to customize your experience
 
 For example:
 
-	source /usr/share/doc/find-the-command/ftc quiet su
+	source /usr/share/doc/find-the-command/ftc.zsh quiet su
 
-It is also necessary to create pacman files database:
+Searching for commands requires pacman or pkgfile files database. This is detected automatically by the find-the-command functions and will ask you to update when it is necessary. If you wish to run the command manually
 
 	# pacman -Fy
+	# pkgfile --update
 
-There is also systemd timer included to update pacman files database on daily basis, so you don't need to worry about it, just run once the following:
+There is also systemd timer included to update pacman files database on daily basis, so you are less likely to need to update it manually, just run once the following:
 
 	# systemctl enable pacman-files.timer
+
+Similarly, if using pkgfile you can enable the pkgfile update timer with:
+
+	# systemctl enable pkgfile-update.timer
 
 ## Screenshots
 ![Screenshot](http://i.imgur.com/fFPqn7i.png)
