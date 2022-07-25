@@ -118,7 +118,7 @@ else
             set args "$args"o
         end
         set db_path (__cnf_pacman_db_path)
-        if __cnf_need_to_update_files "$db_path/sync"
+        if __cnf_need_to_update_files "$db_path"
             __cnf_asroot pacman -Fy >&2
         end
         pacman $args /usr/bin/$cmd 2> /dev/null
