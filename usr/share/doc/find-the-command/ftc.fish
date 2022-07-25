@@ -173,6 +173,18 @@ if $__cnf_noprompt
         end
     end
 else
+    function __cnf_check_fzf
+        if ! which fzf >/dev/null 2>/dev/null
+            if __cnf_prompt_yn "Gathering input requires 'fzf', install it?"
+                __cnf_asroot pacman -S fzf
+            end
+            if ! which fzf >/dev/null 2>/dev/null
+                return 1
+            end
+        end
+        return 0
+    end
+
     function fish_command_not_found
         set cmd "$argv[1]"
         __cnf_pre_search_warn "$cmd"
@@ -194,6 +206,7 @@ else
                 if test -z "$__cnf_action"
                     set may_be_found "\"$cmd\" may be found in package \"$packages\""
                     __cnf_print "$may_be_found\n"
+                    __cnf_check_fzf; or return 127
                     __cnf_print "What would you like to do? "
                     set action (printf "%s\n" $__cnf_actions | \
                         fzf --prompt "Action (\"esc\" to abort):" --header "$may_be_found")
@@ -218,7 +231,11 @@ else
                         return 127
                 end
             case '*'
-                __cnf_print "\"$cmd\" may be found in the following packages:\n"
+                __cnf_print "\"$cmd\" may be found in the following packages:"
+                for package in $packages
+                    __cnf_print "\t$package"
+                end
+                __cnf_check_fzf; or return 127
                 set --local package (printf "%s\n" $packages | fzf --prompt "Select a package to install (\"esc\" to abort):")
                 test -n "$package"; and __cnf_asroot pacman -S "$package"; or return 127
         end
