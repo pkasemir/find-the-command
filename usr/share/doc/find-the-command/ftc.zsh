@@ -10,7 +10,7 @@ _cnf_actions=('install' 'info' 'list files' 'list files (paged)')
 
 pacman_files_command(){
     local CMD=$1
-    local VERSION=$(pacman -Q pacman | awk -F\[\ -\] '{print $2}')
+    local VERSION=$(pacman -Q pacman | awk -F'[ -]' '{print $2}')
     if [[ $(vercmp "$VERSION" "5.2.0") -ge 0 ]]
     then
         local ARGS="-Fq"
@@ -27,10 +27,10 @@ do
         noprompt) cnf_noprompt=1 ;;
         su) cnf_force_su=1 ;;
         quiet) cnf_verbose=0 ;;
-        install) cnf_action=$_cnf_actions[1] ;;
-        info) cnf_action=$_cnf_actions[2] ;;
-        list_files) cnf_action=$_cnf_actions[3] ;;
-        list_files_paged) cnf_action=$_cnf_actions[4] ;;
+        install) cnf_action=${_cnf_actions[@]:0:1} ;;
+        info) cnf_action=${_cnf_actions[@]:1:1} ;;
+        list_files) cnf_action=${_cnf_actions[@]:2:1} ;;
+        list_files_paged) cnf_action=${_cnf_actions[@]:3:1} ;;
         *) _cnf_print "find-the-command: unknown option: $opt"
     esac
 done
@@ -89,14 +89,14 @@ else
                 local ACT PS3="Action (0 to abort): "
                 local prompt_install(){
                     _cnf_print -n "Would you like to install this package? (y|n) "
-                read -q && (_cnf_print;_cnf_asroot pacman -S $PKGS) || (_cnf_print; return 127)
+                    read -q && (_cnf_print;_cnf_asroot pacman -S $PKGS) || (_cnf_print; return 127)
                 }
 
                 if [[ -z $cnf_action ]]
                 then
                     _cnf_print "\n\"$CMD\" may be found in package \"$PKGS\"\n"
                     _cnf_print "What would you like to do? "
-                    select ACT in $_cnf_actions
+                    select ACT in "${_cnf_actions[@]}"
                     do break
                     done
                 else
@@ -113,7 +113,7 @@ else
                         prompt_install ;;
                     *) _cnf_print; return 127
                 esac
-        ;;
+                ;;
             *)
                 local PKG PS3="$(echo -en "\nSelect a number of package to install (0 to abort): ")"
                 _cnf_print "\"$CMD\" may be found in the following packages:\n"
@@ -121,6 +121,7 @@ else
                 do break
                 done
                 [[ -n $PKG ]] && _cnf_asroot pacman -S $PKG || return 127
+                ;;
         esac
     }
 fi
