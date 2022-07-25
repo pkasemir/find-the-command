@@ -187,6 +187,7 @@ else
 
     function fish_command_not_found
         set cmd "$argv[1]"
+        set scroll_header "Shift up or down to scroll the preview"
         _cnf_pre_search_warn "$cmd"
         or return 127
         set packages (_cnf_command_packages "$cmd")
@@ -209,7 +210,10 @@ else
                     _cnf_check_fzf; or return 127
                     _cnf_print "What would you like to do? "
                     set action (printf "%s\n" $_cnf_actions | \
-                        fzf --prompt "Action (\"esc\" to abort):" --header "$may_be_found")
+                        fzf --preview "echo {} | grep -q '^list' && pacman -Flq '$packages' \
+                                || pacman -Si '$packages'" \
+                            --prompt "Action (\"esc\" to abort):" \
+                            --header "$may_be_found"\n$scroll_header)
                 else
                     set action "$_cnf_action"
                 end
@@ -236,7 +240,11 @@ else
                     _cnf_print "\t$package"
                 end
                 _cnf_check_fzf; or return 127
-                set --local package (printf "%s\n" $packages | fzf --prompt "Select a package to install (\"esc\" to abort):")
+                set --local package (printf "%s\n" $packages | \
+                    fzf --bind="tab:preview(pacman -Flq {})" \
+                        --preview "pacman -Si {}" \
+                        --header "Press \"tab\" to view files"\n$scroll_header \
+                        --prompt "Select a package to install (\"esc\" to abort):")
                 test -n "$package"; and _cnf_asroot pacman -S "$package"; or return 127
         end
     end
