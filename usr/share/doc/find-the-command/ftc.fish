@@ -1,44 +1,44 @@
-function __cnf_print
+function _cnf_print
     echo -e 1>&2 $argv
 end
 
-set __cnf_action
-set __cnf_askfirst false
-set __cnf_force_su false
-set __cnf_noprompt false
-set __cnf_noupdate false
-set __cnf_verbose true
+set _cnf_action
+set _cnf_askfirst false
+set _cnf_force_su false
+set _cnf_noprompt false
+set _cnf_noupdate false
+set _cnf_verbose true
 
-set __cnf_actions "install" "info" "list files" "list files (paged)"
+set _cnf_actions "install" "info" "list files" "list files (paged)"
 
 for opt in $argv
     if test (string length "$opt") -gt 0
         switch "$opt"
             case askfirst
-                set __cnf_askfirst true
+                set _cnf_askfirst true
             case noprompt
-                set __cnf_noprompt true
+                set _cnf_noprompt true
             case noupdate
-                set __cnf_noupdate true
+                set _cnf_noupdate true
             case su
-                set __cnf_force_su true
+                set _cnf_force_su true
             case quiet
-                set __cnf_verbose false
+                set _cnf_verbose false
             case install
-                set __cnf_action "$__cnf_actions[1]"
+                set _cnf_action "$_cnf_actions[1]"
             case info
-                set __cnf_action "$__cnf_actions[2]"
+                set _cnf_action "$_cnf_actions[2]"
             case list_files
-                set __cnf_action "$__cnf_actions[3]"
+                set _cnf_action "$_cnf_actions[3]"
             case list_files_paged
-                set __cnf_action "$__cnf_actions[4]"
+                set _cnf_action "$_cnf_actions[4]"
             case '*'
-                __cnf_print "find-the-command: unknown option: $opt"
+                _cnf_print "find-the-command: unknown option: $opt"
         end
     end
 end
 
-function __cnf_pacman_db_path
+function _cnf_pacman_db_path
     set db_path (string trim (sed -n 's/^DBPath[[:space:]]*=//p' /etc/pacman.conf))
     if test -z "$db_path[1]"
         set db_path /var/lib/pacman
@@ -46,9 +46,9 @@ function __cnf_pacman_db_path
     echo "$db_path[1]/sync"
 end
 
-function __cnf_asroot
+function _cnf_asroot
     if test (id -u) -ne 0
-        if $__cnf_force_su
+        if $_cnf_force_su
             su -c "$argv"
         else
             sudo $argv
@@ -58,7 +58,7 @@ function __cnf_asroot
     end
 end
 
-function __cnf_prompt_yn --argument-name prompt
+function _cnf_prompt_yn --argument-name prompt
     read --prompt="echo \"find-the-command: $prompt [Y/n] \"" result
     or kill -s INT $fish_pid
     switch "$result"
@@ -69,16 +69,16 @@ function __cnf_prompt_yn --argument-name prompt
     end
 end
 
-if $__cnf_noupdate
-    function __cnf_need_to_update_files
+if $_cnf_noupdate
+    function _cnf_need_to_update_files
         return 1
     end
 else
-    function __cnf_need_to_update_files --argument-name dir
-        set db_path (__cnf_pacman_db_path)
+    function _cnf_need_to_update_files --argument-name dir
+        set db_path (_cnf_pacman_db_path)
         if test (find "$db_path" -type f -maxdepth 2 -name "*.db" 2> /dev/null | wc -w) -eq 0
-            if __cnf_prompt_yn "No pacman db files in '$db_path', refresh?"
-                __cnf_asroot pacman -Sy >&2
+            if _cnf_prompt_yn "No pacman db files in '$db_path', refresh?"
+                _cnf_asroot pacman -Sy >&2
             else
                 return 1
             end
@@ -91,7 +91,7 @@ else
             set old_files (find $newest_pacman_db -newer $newest_files)
         end
         if test -n "$old_files"
-            __cnf_prompt_yn "$dir/*.files are out of date, update?"
+            _cnf_prompt_yn "$dir/*.files are out of date, update?"
             return $status
         end
         return 1
@@ -99,84 +99,84 @@ else
 end
 
 if type -q pkgfile
-    function __cnf_command_packages --argument-names cmd
+    function _cnf_command_packages --argument-names cmd
         set cache (string trim --chars=' )' (pkgfile --help | sed -n 's/.*--cachedir.*default://p'))
         if test -z "$cache"
             set cache /var/cache/pkgfile
         end
 
-        if __cnf_need_to_update_files "$cache"
-            __cnf_asroot pkgfile --update >&2
+        if _cnf_need_to_update_files "$cache"
+            _cnf_asroot pkgfile --update >&2
         end
         pkgfile --binaries -- "$cmd" 2> /dev/null
     end
 else
-    function __cnf_command_packages --argument-names cmd
+    function _cnf_command_packages --argument-names cmd
         set pacman_version (pacman -Q pacman | awk -F'[ -]' '{print $2}')
         set args "-Fq"
         if test (vercmp "$pacman_version" "5.2.0") -lt 0
             set args "$args"o
         end
-        set db_path (__cnf_pacman_db_path)
-        if __cnf_need_to_update_files "$db_path"
-            __cnf_asroot pacman -Fy >&2
+        set db_path (_cnf_pacman_db_path)
+        if _cnf_need_to_update_files "$db_path"
+            _cnf_asroot pacman -Fy >&2
         end
         pacman $args /usr/bin/$cmd 2> /dev/null
     end
 end
 
-if $__cnf_verbose
-    function __cnf_pre_search_warn --argument-names cmd
-        __cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories...\n"
+if $_cnf_verbose
+    function _cnf_pre_search_warn --argument-names cmd
+        _cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories...\n"
         return 0
     end
 
-    function __cnf_cmd_not_found --argument-names cmd
-        __cnf_print "find-the-command: command not found: $cmd"
+    function _cnf_cmd_not_found --argument-names cmd
+        _cnf_print "find-the-command: command not found: $cmd"
         return 127
     end
 else
-    function __cnf_pre_search_warn
+    function _cnf_pre_search_warn
         return 0
     end
 
-    function __cnf_cmd_not_found
+    function _cnf_cmd_not_found
         return 127
     end
 end
 
-if $__cnf_askfirst
+if $_cnf_askfirst
     # When askfirst is given, override default verbose behavior
-    function __cnf_pre_search_warn --argument-names cmd
-        __cnf_prompt_yn "\"$cmd\" is not found locally, search in repositories?"
+    function _cnf_pre_search_warn --argument-names cmd
+        _cnf_prompt_yn "\"$cmd\" is not found locally, search in repositories?"
         return $status
     end
 end
 
-if $__cnf_noprompt
+if $_cnf_noprompt
     function fish_command_not_found
         set cmd "$argv[1]"
-        __cnf_pre_search_warn "$cmd"
+        _cnf_pre_search_warn "$cmd"
         or return 127
 
-        set packages (__cnf_command_packages "$cmd")
+        set packages (_cnf_command_packages "$cmd")
         switch (count $packages)
             case 0
-                __cnf_cmd_not_found "$cmd"
+                _cnf_cmd_not_found "$cmd"
             case 1
-                __cnf_print "\"$cmd\" may be found in package \"$packages\"\n"
+                _cnf_print "\"$cmd\" may be found in package \"$packages\"\n"
             case '*'
-                __cnf_print "\"$cmd\" may be found in the following packages:"
+                _cnf_print "\"$cmd\" may be found in the following packages:"
                 for package in $packages
-                    __cnf_print "\t$package"
+                    _cnf_print "\t$package"
                 end
         end
     end
 else
-    function __cnf_check_fzf
+    function _cnf_check_fzf
         if ! which fzf >/dev/null 2>/dev/null
-            if __cnf_prompt_yn "Gathering input requires 'fzf', install it?"
-                __cnf_asroot pacman -S fzf
+            if _cnf_prompt_yn "Gathering input requires 'fzf', install it?"
+                _cnf_asroot pacman -S fzf
             end
             if ! which fzf >/dev/null 2>/dev/null
                 return 1
@@ -187,57 +187,57 @@ else
 
     function fish_command_not_found
         set cmd "$argv[1]"
-        __cnf_pre_search_warn "$cmd"
+        _cnf_pre_search_warn "$cmd"
         or return 127
-        set packages (__cnf_command_packages "$cmd")
+        set packages (_cnf_command_packages "$cmd")
         switch (count $packages)
             case 0
-                __cnf_cmd_not_found "$cmd"
+                _cnf_cmd_not_found "$cmd"
             case 1
-                function __cnf_prompt_install --argument-names packages
-                    if __cnf_prompt_yn "Would you like to install '$packages'?"
-                        __cnf_asroot pacman -S "$packages"
+                function _cnf_prompt_install --argument-names packages
+                    if _cnf_prompt_yn "Would you like to install '$packages'?"
+                        _cnf_asroot pacman -S "$packages"
                     else
                         return 127
                     end
                 end
 
                 set action
-                if test -z "$__cnf_action"
+                if test -z "$_cnf_action"
                     set may_be_found "\"$cmd\" may be found in package \"$packages\""
-                    __cnf_print "$may_be_found\n"
-                    __cnf_check_fzf; or return 127
-                    __cnf_print "What would you like to do? "
-                    set action (printf "%s\n" $__cnf_actions | \
+                    _cnf_print "$may_be_found\n"
+                    _cnf_check_fzf; or return 127
+                    _cnf_print "What would you like to do? "
+                    set action (printf "%s\n" $_cnf_actions | \
                         fzf --prompt "Action (\"esc\" to abort):" --header "$may_be_found")
                 else
-                    set action "$__cnf_action"
+                    set action "$_cnf_action"
                 end
 
                 switch "$action"
                     case 'install'
-                        __cnf_asroot pacman -S "$packages"
+                        _cnf_asroot pacman -S "$packages"
                     case 'info'
                         pacman -Si "$packages"
-                        __cnf_prompt_install "$packages"
+                        _cnf_prompt_install "$packages"
                     case 'list files'
                         pacman -Flq "$packages"
-                        __cnf_prompt_install "$packages"
+                        _cnf_prompt_install "$packages"
                     case 'list files (paged)'
                         test -z "$pager"; and set --local pager less
                         pacman -Flq "$packages" | "$pager"
-                        __cnf_prompt_install "$packages"
+                        _cnf_prompt_install "$packages"
                     case '*'
                         return 127
                 end
             case '*'
-                __cnf_print "\"$cmd\" may be found in the following packages:"
+                _cnf_print "\"$cmd\" may be found in the following packages:"
                 for package in $packages
-                    __cnf_print "\t$package"
+                    _cnf_print "\t$package"
                 end
-                __cnf_check_fzf; or return 127
+                _cnf_check_fzf; or return 127
                 set --local package (printf "%s\n" $packages | fzf --prompt "Select a package to install (\"esc\" to abort):")
-                test -n "$package"; and __cnf_asroot pacman -S "$package"; or return 127
+                test -n "$package"; and _cnf_asroot pacman -S "$package"; or return 127
         end
     end
 end
@@ -248,4 +248,4 @@ function __fish_command_not_found_handler \
 end
 
 # Clean up environment
-set -e __cnf_askfirst __cnf_noprompt __cnf_noupdate __cnf_verbose
+set -e _cnf_askfirst _cnf_noprompt _cnf_noupdate _cnf_verbose
