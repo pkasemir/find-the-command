@@ -31,7 +31,8 @@ do
         info) cnf_action=${_cnf_actions[@]:1:1} ;;
         list_files) cnf_action=${_cnf_actions[@]:2:1} ;;
         list_files_paged) cnf_action=${_cnf_actions[@]:3:1} ;;
-        *) _cnf_print "find-the-command: unknown option: $opt"
+        variant=zsh) command_not_found_handler() { command_not_found_handle "$@"; } ;;
+        *) _cnf_print "find-the-command: unknown option: $opt" ;;
     esac
 done
 
