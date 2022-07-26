@@ -1,3 +1,4 @@
+# Print to stderr
 function _cnf_print
     echo -e 1>&2 $argv
 end

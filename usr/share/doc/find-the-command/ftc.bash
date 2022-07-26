@@ -2,9 +2,9 @@
 alias _cnf_print='echo -e 1>&2'
 
 cnf_action=
-cnf_force_su=0
-cnf_noprompt=0
-cnf_verbose=1
+cnf_force_su=false
+cnf_noprompt=false
+cnf_verbose=true
 
 _cnf_actions=('install' 'info' 'list files' 'list files (paged)')
 
@@ -24,9 +24,9 @@ pacman_files_command() {
 for opt in $*
 do
     case $opt in
-        noprompt) cnf_noprompt=1 ;;
-        su) cnf_force_su=1 ;;
-        quiet) cnf_verbose=0 ;;
+        noprompt) cnf_noprompt=true ;;
+        su) cnf_force_su=true ;;
+        quiet) cnf_verbose=false ;;
         install) cnf_action=${_cnf_actions[@]:0:1} ;;
         info) cnf_action=${_cnf_actions[@]:1:1} ;;
         list_files) cnf_action=${_cnf_actions[@]:2:1} ;;
@@ -47,7 +47,7 @@ _cnf_prompt_yn() {
 }
 
 # Don't show pre-search warning if 'quiet' option is not set
-if [[ $cnf_verbose != 0 ]]
+if $cnf_verbose
 then
     _cnf_pre_search_warn() {
         local cmd=$1
@@ -64,7 +64,7 @@ else
 fi
 
 # Without installation prompt
-if [[ $cnf_noprompt == 1 ]]
+if $cnf_noprompt
 then
     command_not_found_handle() {
         local cmd=$1
@@ -87,7 +87,7 @@ else
     if [[ $EUID == 0 ]]
     then _cnf_asroot() { $*; }
     else
-        if [[ $cnf_force_su == 1 ]]
+        if $cnf_force_su
         then _cnf_asroot() { su -c "$*"; }
         else _cnf_asroot() { sudo $*; }
         fi
