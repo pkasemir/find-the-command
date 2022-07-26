@@ -8,7 +8,7 @@ cnf_verbose=1
 
 _cnf_actions=('install' 'info' 'list files' 'list files (paged)')
 
-pacman_files_command(){
+pacman_files_command() {
     local cmd=$1
     local pacman_version=$(pacman -Q pacman | awk -F'[ -]' '{print $2}')
     if [[ $(vercmp "$pacman_version" "5.2.0") -ge 0 ]]
@@ -36,19 +36,31 @@ do
     esac
 done
 
+_cnf_prompt_yn() {
+    local result
+    _cnf_print -n "find-the-command: $1 [Y/n] "
+    read result || kill -s INT $$
+    case "$result" in
+        y* | Y* | '') return 0;;
+        *) return 1;;
+    esac
+}
+
 # Don't show pre-search warning if 'quiet' option is not set
 if [[ $cnf_verbose != 0 ]]
 then
-    _cnf_pre_search_warn(){
+    _cnf_pre_search_warn() {
+        local cmd=$1
         _cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories..."
     }
-    _cnf_cmd_not_found(){
-        _cnf_print "find-the-command: command not found: $cmd"
+    _cnf_cmd_not_found() {
+        local cmd=$1
+        _cnf_print "find-the-command: command not found: \"$cmd\""
         return 127
     }
 else
-    _cnf_pre_search_warn(){ : Do nothing; }
-    _cnf_cmd_not_found(){ return 127; }
+    _cnf_pre_search_warn() { : Do nothing; }
+    _cnf_cmd_not_found() { return 127; }
 fi
 
 # Without installation prompt
@@ -56,24 +68,24 @@ if [[ $cnf_noprompt == 1 ]]
 then
     command_not_found_handle() {
         local cmd=$1
-        _cnf_pre_search_warn
-        local packages=$(pacman_files_command $cmd)
+        _cnf_pre_search_warn "$cmd"
+        local packages=$(pacman_files_command "$cmd")
         case $(echo $packages | wc -w) in
-            0) _cnf_cmd_not_found ;;
+            0) _cnf_cmd_not_found "$cmd";;
             1) _cnf_print "\"$cmd\" may be found in package \"$packages\"" ;;
             *)
                 local package
                 _cnf_print "\"$cmd\" may be found in the following packages:"
-                for package in `echo -n $packages`
+                for package in $packages
                 do
-                _cnf_print "\t$package"
+                    _cnf_print "\t$package"
                 done
         esac
     }
 else
 # With installation prompt (default)
     if [[ $EUID == 0 ]]
-    then _cnf_asroot(){ $*; }
+    then _cnf_asroot() { $*; }
     else
         if [[ $cnf_force_su == 1 ]]
         then _cnf_asroot() { su -c "$*"; }
@@ -82,18 +94,20 @@ else
     fi
     command_not_found_handle() {
         local cmd=$1
-        _cnf_pre_search_warn
+        _cnf_pre_search_warn "$cmd"
         local packages=$(pacman_files_command $cmd)
         case $(echo $packages | wc -w) in
-            0) _cnf_cmd_not_found ;;
+            0) _cnf_cmd_not_found "$cmd";;
             1)
                 local ACT PS3="Action (0 to abort): "
-                prompt_install(){
-                    _cnf_print -n "Would you like to install this package? (y|n) "
-                    local RESULT
-                    read RESULT &&
-                        [[ "$RESULT" = y || "$RESULT" = Y ]] &&
-                        (_cnf_print;_cnf_asroot pacman -S $packages) || (_cnf_print; return 127)
+                _cnf_prompt_install() {
+                    local packages=$1
+                    if _cnf_prompt_yn "Would you like to install '$packages'?"
+                    then
+                        _cnf_asroot pacman -S "$packages"
+                    else
+                        return 127
+                    fi
                 }
 
                 if [[ -z $cnf_action ]]
@@ -110,11 +124,11 @@ else
                 _cnf_print
                 case $ACT in
                     install) _cnf_asroot pacman -S $packages ;;
-                    info) pacman -Si $packages; prompt_install;;
-                    'list files') pacman -Flq $packages; _cnf_print; prompt_install;;
+                    info) pacman -Si $packages; _cnf_prompt_install "$packages";;
+                    'list files') pacman -Flq $packages; _cnf_print; _cnf_prompt_install "$packages";;
                     'list files (paged)') [[ -z $PAGER ]] && local PAGER=less
                         pacman -Flq $packages | $PAGER
-                        prompt_install ;;
+                        _cnf_prompt_install "$packages" ;;
                     *) _cnf_print; return 127
                 esac
                 ;;

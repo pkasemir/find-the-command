@@ -132,7 +132,7 @@ if $_cnf_verbose
     end
 
     function _cnf_cmd_not_found --argument-names cmd
-        _cnf_print "find-the-command: command not found: $cmd"
+        _cnf_print "find-the-command: command not found: \"$cmd\""
         return 127
     end
 else
