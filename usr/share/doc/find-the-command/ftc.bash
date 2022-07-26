@@ -1,10 +1,10 @@
 # Print to stderr
 alias _cnf_print='echo -e 1>&2'
 
-cnf_action=
-cnf_force_su=false
-cnf_noprompt=false
-cnf_verbose=true
+_cnf_action=
+_cnf_force_su=false
+_cnf_noprompt=false
+_cnf_verbose=true
 
 _cnf_actions=('install' 'info' 'list files' 'list files (paged)')
 
@@ -24,13 +24,13 @@ pacman_files_command() {
 for opt in $*
 do
     case $opt in
-        noprompt) cnf_noprompt=true ;;
-        su) cnf_force_su=true ;;
-        quiet) cnf_verbose=false ;;
-        install) cnf_action=${_cnf_actions[@]:0:1} ;;
-        info) cnf_action=${_cnf_actions[@]:1:1} ;;
-        list_files) cnf_action=${_cnf_actions[@]:2:1} ;;
-        list_files_paged) cnf_action=${_cnf_actions[@]:3:1} ;;
+        noprompt) _cnf_noprompt=true ;;
+        su) _cnf_force_su=true ;;
+        quiet) _cnf_verbose=false ;;
+        install) _cnf_action=${_cnf_actions[@]:0:1} ;;
+        info) _cnf_action=${_cnf_actions[@]:1:1} ;;
+        list_files) _cnf_action=${_cnf_actions[@]:2:1} ;;
+        list_files_paged) _cnf_action=${_cnf_actions[@]:3:1} ;;
         variant=zsh) command_not_found_handler() { command_not_found_handle "$@"; } ;;
         *) _cnf_print "find-the-command: unknown option: $opt" ;;
     esac
@@ -47,7 +47,7 @@ _cnf_prompt_yn() {
 }
 
 # Don't show pre-search warning if 'quiet' option is not set
-if $cnf_verbose
+if $_cnf_verbose
 then
     _cnf_pre_search_warn() {
         local cmd=$1
@@ -64,7 +64,7 @@ else
 fi
 
 # Without installation prompt
-if $cnf_noprompt
+if $_cnf_noprompt
 then
     command_not_found_handle() {
         local cmd=$1
@@ -87,7 +87,7 @@ else
     if [[ $EUID == 0 ]]
     then _cnf_asroot() { $*; }
     else
-        if $cnf_force_su
+        if $_cnf_force_su
         then _cnf_asroot() { su -c "$*"; }
         else _cnf_asroot() { sudo $*; }
         fi
@@ -110,7 +110,7 @@ else
                     fi
                 }
 
-                if [[ -z $cnf_action ]]
+                if [[ -z $_cnf_action ]]
                 then
                     _cnf_print "\n\"$cmd\" may be found in package \"$packages\"\n"
                     _cnf_print "What would you like to do? "
@@ -118,7 +118,7 @@ else
                     do break
                     done
                 else
-                    ACT=$cnf_action
+                    ACT=$_cnf_action
                 fi
 
                 _cnf_print
@@ -145,4 +145,4 @@ else
 fi
 
 # Clean up environment
-unset opt cnf_force_su cnf_noprompt cnf_verbose
+unset opt _cnf_force_su _cnf_noprompt _cnf_verbose
