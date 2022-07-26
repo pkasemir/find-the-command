@@ -9,15 +9,15 @@ cnf_verbose=1
 _cnf_actions=('install' 'info' 'list files' 'list files (paged)')
 
 pacman_files_command(){
-    local CMD=$1
-    local VERSION=$(pacman -Q pacman | awk -F'[ -]' '{print $2}')
-    if [[ $(vercmp "$VERSION" "5.2.0") -ge 0 ]]
+    local cmd=$1
+    local pacman_version=$(pacman -Q pacman | awk -F'[ -]' '{print $2}')
+    if [[ $(vercmp "$pacman_version" "5.2.0") -ge 0 ]]
     then
-        local ARGS="-Fq"
+        local args="-Fq"
     else
-        local ARGS="Foq"
+        local args="Foq"
     fi
-    pacman $ARGS /usr/bin/$CMD 2> /dev/null
+    pacman $args /usr/bin/$cmd 2> /dev/null
 }
 
 # Parse options
@@ -40,10 +40,10 @@ done
 if [[ $cnf_verbose != 0 ]]
 then
     _cnf_pre_search_warn(){
-        _cnf_print "find-the-command: \"$CMD\" is not found locally, searching in repositories..." 
+        _cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories..."
     }
     _cnf_cmd_not_found(){
-        _cnf_print "find-the-command: command not found: $CMD"
+        _cnf_print "find-the-command: command not found: $cmd"
         return 127
     }
 else
@@ -55,18 +55,18 @@ fi
 if [[ $cnf_noprompt == 1 ]]
 then
     command_not_found_handle() {
-        local CMD=$1
+        local cmd=$1
         _cnf_pre_search_warn
-        local PKGS=$(pacman_files_command $CMD)
-        case $(echo $PKGS | wc -w) in
+        local packages=$(pacman_files_command $cmd)
+        case $(echo $packages | wc -w) in
             0) _cnf_cmd_not_found ;;
-            1) _cnf_print "\"$CMD\" may be found in package \"$PKGS\"" ;;
+            1) _cnf_print "\"$cmd\" may be found in package \"$packages\"" ;;
             *)
-                local PKG
-                _cnf_print "\"$CMD\" may be found in the following packages:"
-                for PKG in `echo -n $PKGS`
+                local package
+                _cnf_print "\"$cmd\" may be found in the following packages:"
+                for package in `echo -n $packages`
                 do
-                _cnf_print "\t$PKG"
+                _cnf_print "\t$package"
                 done
         esac
     }
@@ -81,10 +81,10 @@ else
         fi
     fi
     command_not_found_handle() {
-        local CMD=$1
+        local cmd=$1
         _cnf_pre_search_warn
-        local PKGS=$(pacman_files_command $CMD)
-        case $(echo $PKGS | wc -w) in
+        local packages=$(pacman_files_command $cmd)
+        case $(echo $packages | wc -w) in
             0) _cnf_cmd_not_found ;;
             1)
                 local ACT PS3="Action (0 to abort): "
@@ -93,12 +93,12 @@ else
                     local RESULT
                     read RESULT &&
                         [[ "$RESULT" = y || "$RESULT" = Y ]] &&
-                        (_cnf_print;_cnf_asroot pacman -S $PKGS) || (_cnf_print; return 127)
+                        (_cnf_print;_cnf_asroot pacman -S $packages) || (_cnf_print; return 127)
                 }
 
                 if [[ -z $cnf_action ]]
                 then
-                    _cnf_print "\n\"$CMD\" may be found in package \"$PKGS\"\n"
+                    _cnf_print "\n\"$cmd\" may be found in package \"$packages\"\n"
                     _cnf_print "What would you like to do? "
                     select ACT in "${_cnf_actions[@]}"
                     do break
@@ -109,22 +109,22 @@ else
 
                 _cnf_print
                 case $ACT in
-                    install) _cnf_asroot pacman -S $PKGS ;;
-                    info) pacman -Si $PKGS; prompt_install;;
-                    'list files') pacman -Flq $PKGS; _cnf_print; prompt_install;;
+                    install) _cnf_asroot pacman -S $packages ;;
+                    info) pacman -Si $packages; prompt_install;;
+                    'list files') pacman -Flq $packages; _cnf_print; prompt_install;;
                     'list files (paged)') [[ -z $PAGER ]] && local PAGER=less
-                        pacman -Flq $PKGS | $PAGER
+                        pacman -Flq $packages | $PAGER
                         prompt_install ;;
                     *) _cnf_print; return 127
                 esac
                 ;;
             *)
-                local PKG PS3="$(echo -en "\nSelect a number of package to install (0 to abort): ")"
-                _cnf_print "\"$CMD\" may be found in the following packages:\n"
-                select PKG in `echo -n $PKGS`
+                local package PS3="$(echo -en "\nSelect a number of package to install (0 to abort): ")"
+                _cnf_print "\"$cmd\" may be found in the following packages:\n"
+                select package in `echo -n $packages`
                 do break
                 done
-                [[ -n $PKG ]] && _cnf_asroot pacman -S $PKG || return 127
+                [[ -n $package ]] && _cnf_asroot pacman -S $package || return 127
                 ;;
         esac
     }
