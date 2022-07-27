@@ -13,29 +13,27 @@ set _cnf_verbose true
 set _cnf_actions "install" "info" "list files" "list files (paged)"
 
 for opt in $argv
-    if test (string length "$opt") -gt 0
-        switch "$opt"
-            case askfirst
-                set _cnf_askfirst true
-            case noprompt
-                set _cnf_noprompt true
-            case noupdate
-                set _cnf_noupdate true
-            case su
-                set _cnf_force_su true
-            case quiet
-                set _cnf_verbose false
-            case install
-                set _cnf_action "$_cnf_actions[1]"
-            case info
-                set _cnf_action "$_cnf_actions[2]"
-            case list_files
-                set _cnf_action "$_cnf_actions[3]"
-            case list_files_paged
-                set _cnf_action "$_cnf_actions[4]"
-            case '*'
-                _cnf_print "find-the-command: unknown option: $opt"
-        end
+    switch "$opt"
+        case askfirst
+            set _cnf_askfirst true
+        case noprompt
+            set _cnf_noprompt true
+        case noupdate
+            set _cnf_noupdate true
+        case su
+            set _cnf_force_su true
+        case quiet
+            set _cnf_verbose false
+        case install
+            set _cnf_action "$_cnf_actions[1]"
+        case info
+            set _cnf_action "$_cnf_actions[2]"
+        case list_files
+            set _cnf_action "$_cnf_actions[3]"
+        case list_files_paged
+            set _cnf_action "$_cnf_actions[4]"
+        case '*'
+            _cnf_print "find-the-command: unknown option: $opt"
     end
 end
 
