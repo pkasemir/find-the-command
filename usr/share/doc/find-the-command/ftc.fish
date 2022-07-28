@@ -213,14 +213,17 @@ else
                 set action
                 if test -z "$_cnf_action"
                     set may_be_found "\"$cmd\" may be found in package \"$packages\""
-                    _cnf_print "$may_be_found\n"
-                    _cnf_check_fzf; or return 127
-                    _cnf_print "What would you like to do? "
-                    set action (printf "%s\n" $_cnf_actions | \
-                        fzf --preview "echo {} | grep -q '^list' && pacman -Flq '$packages' \
-                                || pacman -Si '$packages'" \
-                            --prompt "Action (\"esc\" to abort):" \
-                            --header "$may_be_found"\n$scroll_header)
+                    _cnf_print "$may_be_found"
+                    if _cnf_check_fzf
+                        set action (printf "%s\n" $_cnf_actions | \
+                            fzf --preview "echo {} | grep -q '^list' && pacman -Flq '$packages' \
+                                    || pacman -Si '$packages'" \
+                                --prompt "Action (\"esc\" to abort):" \
+                                --header "$may_be_found
+$scroll_header")
+                    else
+                        return 127
+                    end
                 else
                     set action "$_cnf_action"
                 end
@@ -242,16 +245,21 @@ else
                         return 127
                 end
             case '*'
+                set package
                 _cnf_print "\"$cmd\" may be found in the following packages:"
                 for package in $packages
                     _cnf_print "\t$package"
                 end
-                _cnf_check_fzf; or return 127
-                set --local package (printf "%s\n" $packages | \
-                    fzf --bind="tab:preview(pacman -Flq {})" \
-                        --preview "pacman -Si {}" \
-                        --header "Press \"tab\" to view files"\n$scroll_header \
-                        --prompt "Select a package to install (\"esc\" to abort):")
+                if _cnf_check_fzf
+                    set package (printf "%s\n" $packages | \
+                        fzf --bind="tab:preview(pacman -Flq {})" \
+                            --preview "pacman -Si {}" \
+                            --header "Press \"tab\" to view files
+$scroll_header" \
+                            --prompt "Select a package to install (\"esc\" to abort):")
+                else
+                    return 127
+                end
                 if test -n "$package"
                     _cnf_asroot pacman -S "$package"
                 else

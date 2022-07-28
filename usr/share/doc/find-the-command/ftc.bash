@@ -190,6 +190,7 @@ else
 # With installation prompt (default)
     command_not_found_handle() {
         local cmd=$1
+        local scroll_header="Shift up or down to scroll the preview"
         _cnf_pre_search_warn "$cmd" || return 127
         local packages=$(_cnf_command_packages "$cmd")
         case $(echo $packages | wc -w) in
@@ -207,15 +208,26 @@ else
                     fi
                 }
 
-                local action PS3="Action (0 to abort): "
+                local action
                 if test -z "$_cnf_action"
                 then
                     local may_be_found="\"$cmd\" may be found in package \"$packages\""
-                    _cnf_print "$may_be_found\n"
-                    _cnf_print "What would you like to do? "
-                    select action in "${_cnf_actions[@]}"
-                    do break
-                    done
+                    _cnf_print "$may_be_found"
+                    if which fzf >/dev/null 2>/dev/null
+                    then
+                        action=$(printf "%s\n" "${_cnf_actions[@]}" | \
+                            fzf --preview "echo {} | grep -q '^list' && pacman -Flq '$packages' \
+                                    || pacman -Si '$packages'" \
+                                --prompt "Action (\"esc\" to abort):" \
+                                --header "$may_be_found
+$scroll_header")
+                    else
+                        _cnf_print "What would you like to do? "
+                        local PS3="$(echo -en "\nAction (0 to abort): ")"
+                        select action in "${_cnf_actions[@]}"
+                        do break
+                        done
+                    fi
                 else
                     action="$_cnf_action"
                 fi
@@ -243,11 +255,26 @@ else
                 esac
                 ;;
             *)
+                local package
                 _cnf_print "\"$cmd\" may be found in the following packages:"
-                local package PS3="$(echo -en "\nSelect a number of package to install (0 to abort): ")"
-                select package in $(echo $packages)
-                do break
-                done
+                if which fzf >/dev/null 2>/dev/null
+                then
+                    for package in $(echo $packages)
+                    do
+                        _cnf_print "\t$package"
+                    done
+                    package=$(printf "%s\n" $packages | \
+                        fzf --bind="tab:preview(pacman -Flq {})" \
+                            --preview "pacman -Si {}" \
+                            --header "Press \"tab\" to view files
+$scroll_header" \
+                            --prompt "Select a package to install (\"esc\" to abort):")
+                else
+                    local PS3="$(echo -en "\nSelect a number of package to install (0 to abort): ")"
+                    select package in $(echo $packages)
+                    do break
+                    done
+                fi
                 if test -n "$package"
                 then
                     _cnf_asroot pacman -S "$package"
