@@ -119,7 +119,7 @@ then
 else
     _cnf_command_packages() {
         local cmd=$1
-        local pacman_version=$(pacman -Q pacman | awk -F'[ -]' '{print $2}')
+        local pacman_version=$(pacman -Q pacman 2>/dev/null | awk -F'[ -]' '{print $2}')
         local args="-Fq"
         if test $(vercmp "$pacman_version" "5.2.0") -lt 0
         then

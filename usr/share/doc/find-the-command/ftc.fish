@@ -115,7 +115,7 @@ if type pkgfile >/dev/null 2>/dev/null
 else
     function _cnf_command_packages
         set cmd "$argv[1]"
-        set pacman_version (pacman -Q pacman | awk -F'[ -]' '{print $2}')
+        set pacman_version (pacman -Q pacman 2>/dev/null | awk -F'[ -]' '{print $2}')
         set args "-Fq"
         if test (vercmp "$pacman_version" "5.2.0") -lt 0
             set args "$args"o
