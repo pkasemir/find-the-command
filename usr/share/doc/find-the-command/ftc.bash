@@ -175,11 +175,11 @@ then
                 _cnf_cmd_not_found "$cmd"
                 ;;
             1)
-                _cnf_print "\"$cmd\" may be found in package \"$packages\""
+                _cnf_print "find-the-command: \"$cmd\" may be found in package \"$packages\""
                 ;;
             *)
                 local package
-                _cnf_print "\"$cmd\" may be found in the following packages:"
+                _cnf_print "find-the-command: \"$cmd\" may be found in the following packages:"
                 for package in $(echo $packages)
                 do
                     _cnf_print "\t$package"
@@ -212,7 +212,7 @@ else
                 if test -z "$_cnf_action"
                 then
                     local may_be_found="\"$cmd\" may be found in package \"$packages\""
-                    _cnf_print "$may_be_found"
+                    _cnf_print "find-the-command: $may_be_found"
                     if which fzf >/dev/null 2>/dev/null
                     then
                         action=$(printf "%s\n" "${_cnf_actions[@]}" | \
@@ -222,7 +222,7 @@ else
                                 --header "$may_be_found
 $scroll_header")
                     else
-                        _cnf_print "What would you like to do? "
+                        _cnf_print "find-the-command: What would you like to do? "
                         local PS3="$(echo -en "\nAction (0 to abort): ")"
                         select action in "${_cnf_actions[@]}"
                         do break
@@ -256,7 +256,7 @@ $scroll_header")
                 ;;
             *)
                 local package
-                _cnf_print "\"$cmd\" may be found in the following packages:"
+                _cnf_print "find-the-command: \"$cmd\" may be found in the following packages:"
                 if which fzf >/dev/null 2>/dev/null
                 then
                     for package in $(echo $packages)

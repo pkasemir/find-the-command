@@ -170,9 +170,9 @@ if $_cnf_noprompt
             case 0
                 _cnf_cmd_not_found "$cmd"
             case 1
-                _cnf_print "\"$cmd\" may be found in package \"$packages\""
+                _cnf_print "find-the-command: \"$cmd\" may be found in package \"$packages\""
             case '*'
-                _cnf_print "\"$cmd\" may be found in the following packages:"
+                _cnf_print "find-the-command: \"$cmd\" may be found in the following packages:"
                 for package in $packages
                     _cnf_print "\t$package"
                 end
@@ -213,7 +213,7 @@ else
                 set action
                 if test -z "$_cnf_action"
                     set may_be_found "\"$cmd\" may be found in package \"$packages\""
-                    _cnf_print "$may_be_found"
+                    _cnf_print "find-the-command: $may_be_found"
                     if _cnf_check_fzf
                         set action (printf "%s\n" $_cnf_actions | \
                             fzf --preview "echo {} | grep -q '^list' && pacman -Flq '$packages' \
@@ -246,7 +246,7 @@ $scroll_header")
                 end
             case '*'
                 set package
-                _cnf_print "\"$cmd\" may be found in the following packages:"
+                _cnf_print "find-the-command: \"$cmd\" may be found in the following packages:"
                 for package in $packages
                     _cnf_print "\t$package"
                 end
