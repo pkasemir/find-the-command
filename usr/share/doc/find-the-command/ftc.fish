@@ -135,19 +135,9 @@ if $_cnf_verbose
         _cnf_print "find-the-command: \"$cmd\" is not found locally, searching in repositories..."
         return 0
     end
-
-    function _cnf_cmd_not_found
-        set cmd "$argv[1]"
-        _cnf_print "find-the-command: command not found: \"$cmd\""
-        return 127
-    end
 else
     function _cnf_pre_search_warn
         return 0
-    end
-
-    function _cnf_cmd_not_found
-        return 127
     end
 end
 
@@ -158,6 +148,12 @@ if $_cnf_askfirst
         _cnf_prompt_yn "\"$cmd\" is not found locally, search in repositories?"
         return $status
     end
+end
+
+function _cnf_cmd_not_found
+    set cmd "$argv[1]"
+    _cnf_print "find-the-command: command not found: \"$cmd\""
+    return 127
 end
 
 # Without installation prompt
