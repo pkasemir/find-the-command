@@ -43,6 +43,8 @@ Searching for commands requires pacman or pkgfile files database. This is detect
 	# pacman -Fy
 	# pkgfile --update
 
+If the program `fzf` is installed, it will be used to select the packages and show a nice preview of the package and it's files.
+
 There is also systemd timer included to update pacman files database on daily basis, so you are less likely to need to update it manually, just run once the following:
 
 	# systemctl enable pacman-files.timer
