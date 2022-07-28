@@ -100,10 +100,10 @@ else
     }
 fi
 
-if type pkgfile >/dev/null 2>/dev/null
-then
-    _cnf_command_packages() {
-        local cmd=$1
+_cnf_command_packages() {
+    local cmd=$1
+    if type pkgfile >/dev/null 2>/dev/null
+    then
         local cache=$(pkgfile --help | sed -n 's/.*--cachedir.*default:[[:space:]]*\(.*\))$/\1/p')
         if test -z "$cache"
         then
@@ -115,10 +115,7 @@ then
             _cnf_asroot pkgfile --update >&2
         fi
         pkgfile --binaries -- "$cmd" 2>/dev/null
-    }
-else
-    _cnf_command_packages() {
-        local cmd=$1
+    else
         local pacman_version=$(pacman -Q pacman 2>/dev/null | awk -F'[ -]' '{print $2}')
         local args="-Fq"
         if test $(vercmp "$pacman_version" "5.2.0") -lt 0
@@ -131,8 +128,8 @@ else
             _cnf_asroot pacman -Fy >&2
         fi
         pacman $args "/usr/bin/$cmd" 2>/dev/null
-    }
-fi
+    fi
+}
 
 # Don't show pre-search warning if 'quiet' option is not set
 if $_cnf_verbose

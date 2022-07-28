@@ -99,9 +99,9 @@ else
     end
 end
 
-if type pkgfile >/dev/null 2>/dev/null
-    function _cnf_command_packages
-        set cmd "$argv[1]"
+function _cnf_command_packages
+    set cmd "$argv[1]"
+    if type pkgfile >/dev/null 2>/dev/null
         set cache (pkgfile --help | sed -n 's/.*--cachedir.*default:[[:space:]]*\(.*\))$/\1/p')
         if test -z "$cache"
             set cache /var/cache/pkgfile
@@ -111,10 +111,7 @@ if type pkgfile >/dev/null 2>/dev/null
             _cnf_asroot pkgfile --update >&2
         end
         pkgfile --binaries -- "$cmd" 2>/dev/null
-    end
-else
-    function _cnf_command_packages
-        set cmd "$argv[1]"
+    else
         set pacman_version (pacman -Q pacman 2>/dev/null | awk -F'[ -]' '{print $2}')
         set args "-Fq"
         if test (vercmp "$pacman_version" "5.2.0") -lt 0
