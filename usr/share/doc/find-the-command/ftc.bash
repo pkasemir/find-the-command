@@ -131,6 +131,16 @@ _cnf_command_packages() {
     fi
 }
 
+_cnf_package_files() {
+    local package=$1
+    if type pkgfile >/dev/null 2>/dev/null
+    then
+        pkgfile --list "$package" | sed 's/[^[:space:]]*[[:space:]]*//'
+    else
+        pacman -Flq "$package"
+    fi
+}
+
 # Don't show pre-search warning if 'quiet' option is not set
 if $_cnf_verbose
 then
@@ -211,9 +221,11 @@ else
                     _cnf_print "find-the-command: $may_be_found"
                     if which fzf >/dev/null 2>/dev/null
                     then
+                        local package_files=$(_cnf_package_files "$packages")
+                        local package_info=$(pacman -Si "$packages")
                         action=$(printf "%s\n" "${_cnf_actions[@]}" | \
-                            fzf --preview "echo {} | grep -q '^list' && pacman -Flq '$packages' \
-                                    || pacman -Si '$packages'" \
+                            fzf --preview "echo {} | grep -q '^list' && echo '$package_files' \
+                                    || echo '$package_info'" \
                                 --prompt "Action (\"esc\" to abort):" \
                                 --header "$may_be_found
 $scroll_header")
@@ -237,12 +249,12 @@ $scroll_header")
                         _cnf_prompt_install "$packages"
                         ;;
                     'list files')
-                        pacman -Flq "$packages"
+                        _cnf_package_files "$packages"
                         _cnf_prompt_install "$packages"
                         ;;
                     'list files (paged)')
                         test -z "$PAGER" && local PAGER=less
-                        pacman -Flq "$packages" | "$PAGER"
+                        _cnf_package_files "$packages" | "$PAGER"
                         _cnf_prompt_install "$packages"
                         ;;
                     *)
@@ -260,7 +272,9 @@ $scroll_header")
                         _cnf_print "\t$package"
                     done
                     package=$(printf "%s\n" $packages | \
-                        fzf --bind="tab:preview(pacman -Flq {})" \
+                        fzf --bind="tab:preview(type pkgfile >/dev/null 2>/dev/null && \
+                                pkgfile --list {} | sed 's/[^[:space:]]*[[:space:]]*//' || \
+                                pacman -Flq {})" \
                             --preview "pacman -Si {}" \
                             --header "Press \"tab\" to view files
 $scroll_header" \

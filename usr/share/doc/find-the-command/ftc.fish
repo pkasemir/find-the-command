@@ -125,6 +125,15 @@ function _cnf_command_packages
     end
 end
 
+function _cnf_package_files
+    set package "$argv[1]"
+    if type pkgfile >/dev/null 2>/dev/null
+        pkgfile --list "$package" | sed 's/[^[:space:]]*[[:space:]]*//'
+    else
+        pacman -Flq "$package"
+    end
+end
+
 # Don't show pre-search warning if 'quiet' option is not set
 if $_cnf_verbose
     function _cnf_pre_search_warn
@@ -208,9 +217,11 @@ else
                     set may_be_found "\"$cmd\" may be found in package \"$packages\""
                     _cnf_print "find-the-command: $may_be_found"
                     if _cnf_check_fzf
+                        set package_files (_cnf_package_files "$packages" | string collect)
+                        set package_info (pacman -Si "$packages" | string collect)
                         set action (printf "%s\n" $_cnf_actions | \
-                            fzf --preview "echo {} | grep -q '^list' && pacman -Flq '$packages' \
-                                    || pacman -Si '$packages'" \
+                            fzf --preview "echo {} | grep -q '^list' && echo '$package_files' \
+                                    || echo '$package_info'" \
                                 --prompt "Action (\"esc\" to abort):" \
                                 --header "$may_be_found
 $scroll_header")
@@ -228,11 +239,11 @@ $scroll_header")
                         pacman -Si "$packages"
                         _cnf_prompt_install "$packages"
                     case 'list files'
-                        pacman -Flq "$packages"
+                        _cnf_package_files "$packages"
                         _cnf_prompt_install "$packages"
                     case 'list files (paged)'
                         test -z "$pager" && set --local pager less
-                        pacman -Flq "$packages" | "$pager"
+                        _cnf_package_files "$packages" | "$pager"
                         _cnf_prompt_install "$packages"
                     case '*'
                         return 127
@@ -245,7 +256,9 @@ $scroll_header")
                 end
                 if _cnf_check_fzf
                     set package (printf "%s\n" $packages | \
-                        fzf --bind="tab:preview(pacman -Flq {})" \
+                        fzf --bind="tab:preview(type pkgfile >/dev/null 2>/dev/null && \
+                                pkgfile --list {} | sed 's/[^[:space:]]*[[:space:]]*//' || \
+                                pacman -Flq {})" \
                             --preview "pacman -Si {}" \
                             --header "Press \"tab\" to view files
 $scroll_header" \
