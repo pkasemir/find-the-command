@@ -43,8 +43,12 @@ _cnf_asroot() {
         if $_cnf_force_su
         then
             su -c "$*"
-        else
+        elif command -v sudo > /dev/null 2>&1 && sudo -l > /dev/null 2>&1
+        then
             sudo "$@"
+        elif command -v doas > /dev/null 2>&1 && doas -C /etc/doas.conf > /dev/null 2>&1
+        then
+            doas "$@"
         fi
     else
         "$@"
