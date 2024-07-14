@@ -50,8 +50,10 @@ function _cnf_asroot
     if test (id -u) -ne 0
         if $_cnf_force_su
             su -c "$argv"
-        else
+        else if command -v sudo > /dev/null 2>&1 && sudo -l > /dev/null 2>&1
             sudo $argv
+        else if command -v doas > /dev/null 2>&1 && doas -C /etc/doas.conf > /dev/null 2>&1
+            doas $argv
         end
     else
         $argv
